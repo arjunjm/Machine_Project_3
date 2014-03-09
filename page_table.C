@@ -15,14 +15,12 @@ unsigned int PageTable::paging_enabled;
 PageTable::PageTable()
 {
     /* Any 4k-aligned address can be used for the page_directory */
-    page_directory = reinterpret_cast <unsigned long*> (kernel_mem_pool->get_frame() * PageTable::PAGE_SIZE);
+    // page_directory = reinterpret_cast <unsigned long*> (kernel_mem_pool->get_frame() * PageTable::PAGE_SIZE);
+    page_directory = reinterpret_cast <unsigned long*> (process_mem_pool->get_frame() * PageTable::PAGE_SIZE);
 
     /* The page table follows the page_directory at the next 4k-aligned address */
-    page_table     = reinterpret_cast <unsigned long*> (kernel_mem_pool->get_frame() * PageTable::PAGE_SIZE);
-
-    Console::puts("Page dir value");
-    Console::putui(*page_directory);
-    Console::puts("\n");
+    //page_table     = reinterpret_cast <unsigned long*> (kernel_mem_pool->get_frame() * PageTable::PAGE_SIZE);
+    page_table     = reinterpret_cast <unsigned long*> (process_mem_pool->get_frame() * PageTable::PAGE_SIZE);
 
     unsigned long address = 0;
 
@@ -51,6 +49,9 @@ PageTable::PageTable()
     {
         page_directory[i] = 0 | 2;
     }
+
+    page_directory[1023] = (unsigned long) page_directory;
+    page_directory[1023] |= 3;
 }
 
 void PageTable::init_paging(FramePool * _kernel_mem_pool,
@@ -87,9 +88,18 @@ void PageTable::enable_paging()
 void PageTable::handle_fault(REGS * _r)
 {
     /* Page fault handler */
-    
+   
     unsigned long addr = 0, page_dir_index = 0, page_table_index = 0, page_offset = 0;
     unsigned long page_fault_dir = read_cr2();
+
+    /* This follows from the recursive model. The page directory base address in the virtual 
+     * address space will always be 0xFFFFF000.
+     */
+    unsigned long *page_directory_virtual_base_addr = (unsigned long *) 0xFFFFF000;
+    
+
+    /* The page tables will start from the address 0xFFC00000 in the virtual address space. */
+    unsigned long *page_table_virtual_base_addr = (unsigned long *) 0xFFC00000;
 
     /* Page directory index is stored in the first 10 bits of the virtual address */ 
     page_dir_index   = SHIFT_RIGHT (page_fault_dir, PAGE_DIR_SHIFT) & 0x3FF;
@@ -100,13 +110,14 @@ void PageTable::handle_fault(REGS * _r)
     /* Page offset is stored in the first 12 bits of the virtual address */
     page_offset = page_fault_dir & 0xFFF;
 
-    if ((current_page_table->page_directory[page_dir_index] & 0x1) == 0)
+    if((page_directory_virtual_base_addr[page_dir_index] & 0x1) == 0)
     /* The page table is not present in the page directory. 
-     * So allocate a frame from the kernel frame pool and mark the page as present.
+     * So allocate a frame from the process frame pool and mark the page as present.
      */
     {
-        current_page_table->page_directory[page_dir_index] = ((PageTable::kernel_mem_pool->get_frame()) * PageTable::PAGE_SIZE ) | 3;    
+        page_directory_virtual_base_addr[page_dir_index] = ((PageTable::process_mem_pool->get_frame()) * PageTable::PAGE_SIZE ) | 3;
     }
-    ((unsigned long*)((current_page_table->page_directory[page_dir_index]) & 0xFFFFF000) )[page_table_index] = ( (PageTable::process_mem_pool->get_frame()) * (PageTable::PAGE_SIZE)) | 3;
-    
+    unsigned long *page_table = (unsigned long*) ((unsigned long)page_table_virtual_base_addr + page_dir_index * 0x1000);
+    page_table[page_table_index] = ((PageTable::process_mem_pool->get_frame()) * PageTable::PAGE_SIZE ) | 3;
 }
+

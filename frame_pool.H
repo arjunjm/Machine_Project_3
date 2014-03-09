@@ -18,7 +18,9 @@
 /* DEFINES */
 /*--------------------------------------------------------------------------*/
 
-/* -- (none) -- */
+#define MB * (0x1 << 20)
+#define KB * (0x1 << 10)
+#define START_OFFSET ((2 MB) / (4 KB))
 
 /*--------------------------------------------------------------------------*/
 /* INCLUDES */
@@ -39,6 +41,15 @@
 class FramePool {
 private:
      /* -- DEFINE YOUR FRAME POOL DATA STRUCTURE(s) HERE. */
+   unsigned long base_frame_number;
+   unsigned long number_of_frames_managed;
+   unsigned long managament_frame_number;
+
+   /*
+    * Since dynamic allocation is not possible now, we create a bitmap for  
+    * holding the frame status.
+    * 0 indicates a free frame while 1 indicates an allocated frame.*/
+   static unsigned long* frame_map;
 
 public:
    static const unsigned int FRAME_SIZE = 4096;
