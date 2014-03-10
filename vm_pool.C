@@ -131,6 +131,9 @@ void VMPool::release(unsigned long _start_address)
         {
             vm_region_info[i].vm_region_start_addr = 0;
             number_of_vm_regions--;
+
+            /* Calls to page_table free_page function here */
+            
         }
     }
 }
@@ -139,7 +142,9 @@ BOOLEAN VMPool::is_legitimate(unsigned long _address)
 {
     for (int i = 0; i < (PageTable::PAGE_SIZE / sizeof(vm_region_info_t)); i++)
     {
-        if (_address < (vm_region_info[i].vm_region_start_addr + vm_region_info[i].allocated_size))
+        if (vm_region_info[i].vm_region_start_addr == 0)
+            continue;
+        if ( (_address >= vm_region_info[i].vm_region_start_addr) && (_address < (vm_region_info[i].vm_region_start_addr + vm_region_info[i].allocated_size)) )
             return TRUE;
     }
     return FALSE;

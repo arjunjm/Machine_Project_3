@@ -11,7 +11,6 @@ FramePool* PageTable::kernel_mem_pool;
 FramePool* PageTable::process_mem_pool;
 unsigned long PageTable::shared_size;        
 unsigned int PageTable::paging_enabled;
-int PageTable::number_of_vm_pools;
 
 PageTable::PageTable()
 {
