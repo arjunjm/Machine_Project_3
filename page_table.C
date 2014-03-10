@@ -11,6 +11,7 @@ FramePool* PageTable::kernel_mem_pool;
 FramePool* PageTable::process_mem_pool;
 unsigned long PageTable::shared_size;        
 unsigned int PageTable::paging_enabled;
+unsigned int PageTable::number_of_vm_pools_managed;
 
 PageTable::PageTable()
 {
@@ -88,25 +89,49 @@ void PageTable::handle_fault(REGS * _r)
     /* Page fault handler */
    
     unsigned long addr = 0, page_dir_index = 0, page_table_index = 0, page_offset = 0;
-    unsigned long page_fault_dir = read_cr2();
+    unsigned long page_fault_addr = read_cr2();
+
+    /* Check if the address is legitimate */
+    bool is_legitimate = false;
+    for (int i = 0; i < MAX_NUMBER_OF_VM_POOLS; i++)
+    {
+        VMPool *vm_pool = current_page_table->vm_pool_list[i];
+        if(vm_pool)
+        {
+            if(vm_pool->is_legitimate(page_fault_addr))
+            {
+                is_legitimate = true;
+            }
+            if (is_legitimate)
+                break;
+        }
+    }
+
+    if(!is_legitimate)
+    {
+        /*
+         * If the address is not legitimate, return immediately
+         * without handling the fault
+         */
+        return;
+    }
 
     /* This follows from the recursive model. The page directory base address in the virtual 
      * address space will always be 0xFFFFF000.
      */
     unsigned long *page_directory_virtual_base_addr = (unsigned long *) 0xFFFFF000;
     
-
     /* The page tables will start from the address 0xFFC00000 in the virtual address space. */
     unsigned long *page_table_virtual_base_addr = (unsigned long *) 0xFFC00000;
 
     /* Page directory index is stored in the first 10 bits of the virtual address */ 
-    page_dir_index   = SHIFT_RIGHT (page_fault_dir, PAGE_DIR_SHIFT) & 0x3FF;
+    page_dir_index   = SHIFT_RIGHT (page_fault_addr, PAGE_DIR_SHIFT) & 0x3FF;
 
     /* Page table index is stored in the second 10 bits of the virtual address */ 
-    page_table_index = SHIFT_RIGHT (page_fault_dir, PAGE_TABLE_SHIFT) & 0x3FF;
+    page_table_index = SHIFT_RIGHT (page_fault_addr, PAGE_TABLE_SHIFT) & 0x3FF;
 
     /* Page offset is stored in the first 12 bits of the virtual address */
-    page_offset = page_fault_dir & 0xFFF;
+    page_offset = page_fault_addr & 0xFFF;
 
     if((page_directory_virtual_base_addr[page_dir_index] & 0x1) == 0)
     /* The page table is not present in the page directory. 
@@ -119,6 +144,9 @@ void PageTable::handle_fault(REGS * _r)
     page_table[page_table_index] = ((PageTable::process_mem_pool->get_frame()) * PageTable::PAGE_SIZE ) | 3;
 }
 
+/*
+ * The page no is the first 20 bits of the virtual address.
+ */
 void PageTable::free_page(unsigned long _page_no)
 {
 
@@ -126,4 +154,6 @@ void PageTable::free_page(unsigned long _page_no)
 
 void PageTable::register_vmpool(VMPool *_pool)
 {
+    vm_pool_list[number_of_vm_pools_managed] = _pool;
+    number_of_vm_pools_managed++;
 }

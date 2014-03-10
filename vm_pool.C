@@ -132,7 +132,8 @@ void VMPool::release(unsigned long _start_address)
             vm_region_info[i].vm_region_start_addr = 0;
             number_of_vm_regions--;
 
-            /* Calls to page_table free_page function here */
+            /* Calls to page_table free_page function */
+            
             
         }
     }

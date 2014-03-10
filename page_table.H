@@ -17,6 +17,7 @@
 /* DEFINES */
 /*--------------------------------------------------------------------------*/
 
+#define MAX_NUMBER_OF_VM_POOLS 5
 
 /*--------------------------------------------------------------------------*/
 /* INCLUDES */
@@ -54,6 +55,10 @@ private:
   /* DATA FOR CURRENT PAGE TABLE */
   unsigned long        * page_directory;     /* where is page directory located? */
   unsigned long        * page_table;
+
+  /* THIS ARRAY STORES THE VM POOLS */
+  VMPool               * vm_pool_list[MAX_NUMBER_OF_VM_POOLS];
+  static unsigned int number_of_vm_pools_managed;
 
 public:
   static const unsigned int PAGE_SIZE        = FramePool::FRAME_SIZE; /* in bytes */
