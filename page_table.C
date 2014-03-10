@@ -11,15 +11,14 @@ FramePool* PageTable::kernel_mem_pool;
 FramePool* PageTable::process_mem_pool;
 unsigned long PageTable::shared_size;        
 unsigned int PageTable::paging_enabled;
+int PageTable::number_of_vm_pools;
 
 PageTable::PageTable()
 {
     /* Any 4k-aligned address can be used for the page_directory */
-    // page_directory = reinterpret_cast <unsigned long*> (kernel_mem_pool->get_frame() * PageTable::PAGE_SIZE);
     page_directory = reinterpret_cast <unsigned long*> (process_mem_pool->get_frame() * PageTable::PAGE_SIZE);
 
     /* The page table follows the page_directory at the next 4k-aligned address */
-    //page_table     = reinterpret_cast <unsigned long*> (kernel_mem_pool->get_frame() * PageTable::PAGE_SIZE);
     page_table     = reinterpret_cast <unsigned long*> (process_mem_pool->get_frame() * PageTable::PAGE_SIZE);
 
     unsigned long address = 0;
@@ -121,3 +120,11 @@ void PageTable::handle_fault(REGS * _r)
     page_table[page_table_index] = ((PageTable::process_mem_pool->get_frame()) * PageTable::PAGE_SIZE ) | 3;
 }
 
+void PageTable::free_page(unsigned long _page_no)
+{
+
+}
+
+void PageTable::register_vmpool(VMPool *_pool)
+{
+}

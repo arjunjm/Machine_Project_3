@@ -25,11 +25,17 @@
 /*--------------------------------------------------------------------------*/
 #include "utils.H"
 #include "frame_pool.H"
+#include "page_table.H"
 /* -- (none) -- */
 
 /*--------------------------------------------------------------------------*/
 /* DATA STRUCTURES */
 /*--------------------------------------------------------------------------*/
+
+struct vm_region_info_t {                                                        
+    unsigned long vm_region_start_addr;                                          
+    unsigned long allocated_size;                                              
+};
 
 /* Forward declaration of class PageTable */
 class PageTable;
@@ -41,7 +47,15 @@ class PageTable;
 class VMPool { /* Virtual Memory Pool */
 private:
    /* -- DEFINE YOUR VIRTUAL MEMORY POOL DATA STRUCTURE(s) HERE. */
-
+   unsigned long vm_start_address;
+   unsigned long pool_size;
+   FramePool *frame_pool;
+   PageTable *page_table;
+                                                                                                                              
+   /* VM REGIONS ARE STORED IN AN ARRAY OF STRUCTURES */                          
+   struct vm_region_info_t *vm_region_info;                                                
+   unsigned int number_of_vm_regions;
+               
 public:
    VMPool(unsigned long _base_address,
           unsigned long _size,
