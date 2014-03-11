@@ -129,12 +129,20 @@ void VMPool::release(unsigned long _start_address)
     {
         if(vm_region_info[i].vm_region_start_addr == _start_address)
         {
+
+            /* Calls to page_table free_page function.
+             * We pass the page number to the page table free_page function.
+             * The page number is given by the first 20 bits of the address.
+             */
+            int starting_page_number = vm_region_info[i].vm_region_start_addr / PageTable::PAGE_SIZE;
+            int ending_page_number   = (vm_region_info[i].vm_region_start_addr + vm_region_info[i].allocated_size) / PageTable::PAGE_SIZE;
+
+            for (int j = starting_page_number; j <= ending_page_number; j++)
+                this->page_table->free_page(j);
+
+            /* Frees the region for allocation. */
             vm_region_info[i].vm_region_start_addr = 0;
             number_of_vm_regions--;
-
-            /* Calls to page_table free_page function */
-            
-            
         }
     }
 }

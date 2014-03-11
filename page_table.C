@@ -51,6 +51,7 @@ PageTable::PageTable()
 
     page_directory[1023] = (unsigned long) page_directory;
     page_directory[1023] |= 3;
+
 }
 
 void PageTable::init_paging(FramePool * _kernel_mem_pool,
@@ -149,7 +150,15 @@ void PageTable::handle_fault(REGS * _r)
  */
 void PageTable::free_page(unsigned long _page_no)
 {
+    unsigned long *page_table_virtual_base_addr = (unsigned long *) 0xFFC00000;
+    unsigned long page_dir_index   = SHIFT_RIGHT (_page_no, 10) & 0x3FF;
+    unsigned long page_table_index = _page_no & 0x3FF;
 
+    /* Gets the page table associated with the given page number */
+    unsigned long *page_table = (unsigned long*) ((unsigned long)page_table_virtual_base_addr + page_dir_index * 0x1000);
+
+    /* Invalidates the entry in the page table */
+    page_table[page_table_index] = 2;
 }
 
 void PageTable::register_vmpool(VMPool *_pool)
